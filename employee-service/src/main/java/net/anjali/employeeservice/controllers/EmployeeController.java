@@ -1,6 +1,7 @@
 package net.anjali.employeeservice.controllers;
 
 import lombok.AllArgsConstructor;
+import net.anjali.employeeservice.dto.APIResponseDto;
 import net.anjali.employeeservice.dto.EmployeeDto;
 import net.anjali.employeeservice.entity.Employee;
 import net.anjali.employeeservice.services.EmployeeService;
@@ -18,13 +19,15 @@ public class EmployeeController {
 
     @PostMapping
     public ResponseEntity<EmployeeDto> saveEmployee(@RequestBody EmployeeDto employeeDto){
+        System.out.println("************ controller"+employeeDto.getDepartmentCode());
         EmployeeDto savedEmployeeDto = this.employeeService.saveEmployee(employeeDto);
+        System.out.println("************ controller after "+savedEmployeeDto.getDepartmentCode());
         return new ResponseEntity<>(savedEmployeeDto, HttpStatus.CREATED);
     }
 
     @GetMapping("/employee/{id}")
-    public ResponseEntity<EmployeeDto> fetchEmployee(@PathVariable("id") Long id){
-        EmployeeDto dto = this.employeeService.getEmployee(id);
+    public ResponseEntity<APIResponseDto> fetchEmployee(@PathVariable("id") Long id){
+        APIResponseDto dto = this.employeeService.getEmployee(id);
         return new ResponseEntity<>(dto, HttpStatus.FOUND);
     }
 }
