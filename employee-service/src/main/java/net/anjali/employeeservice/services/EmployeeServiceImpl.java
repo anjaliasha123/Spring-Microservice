@@ -1,12 +1,17 @@
 package net.anjali.employeeservice.services;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.anjali.employeeservice.dto.APIResponseDto;
 import net.anjali.employeeservice.dto.DepartmentDto;
 import net.anjali.employeeservice.dto.EmployeeDto;
 import net.anjali.employeeservice.entity.Employee;
 import net.anjali.employeeservice.mapper.EmployeeMapper;
 import net.anjali.employeeservice.repository.EmployeeRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -15,9 +20,11 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 @Service
 @AllArgsConstructor
+@Slf4j
 public class EmployeeServiceImpl implements EmployeeService{
     @Autowired
     private EmployeeRepository employeeRepository;
+
 //    @Autowired
 //    private RestTemplate restTemplate;
 //
@@ -33,7 +40,10 @@ public class EmployeeServiceImpl implements EmployeeService{
     }
 
     @Override
+//    @CircuitBreaker(name = "${spring.application.name}", fallbackMethod = "getDefaultDepartment")
+    @Retry(name = "${spring.application.name}", fallbackMethod = "getDefaultDepartment")
     public APIResponseDto getEmployee(Long id) {
+        log.info("iNSIDE getEmployee() METHOD");
         Employee employee = this.employeeRepository.findById(id).get();
 //        ResponseEntity<DepartmentDto> responseEntity =  restTemplate.getForEntity(
 //                "http://localhost:8080/api/departments/department/"+employee.getDepartmentCode(),
@@ -46,6 +56,22 @@ public class EmployeeServiceImpl implements EmployeeService{
 //                .bodyToMono(DepartmentDto.class)
 //                .block();
         DepartmentDto departmentDto = apiClient.getDepartmentByCode(employee.getDepartmentCode());
+        EmployeeDto employeeDto = EmployeeMapper.INSTANCE.employeeToEmployeeDto(employee);
+
+        APIResponseDto apiResponseDto = new APIResponseDto();
+        apiResponseDto.setEmployeeDto(employeeDto);
+        apiResponseDto.setDepartmentDto(departmentDto);
+
+        return apiResponseDto;
+    }
+    public APIResponseDto getDefaultDepartment(Long id, Exception exception){
+        log.info("iNSIDE FALLBACK METHOD");
+        Employee employee = this.employeeRepository.findById(id).get();
+        DepartmentDto departmentDto = new DepartmentDto();
+        departmentDto.setDepartmentCode("B01");
+        departmentDto.setDepartmentName("Training dept");
+        departmentDto.setDepartmentDescription("Department for training new employees");
+
         EmployeeDto employeeDto = EmployeeMapper.INSTANCE.employeeToEmployeeDto(employee);
 
         APIResponseDto apiResponseDto = new APIResponseDto();
