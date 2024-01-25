@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.anjali.employeeservice.dto.APIResponseDto;
 import net.anjali.employeeservice.dto.DepartmentDto;
 import net.anjali.employeeservice.dto.EmployeeDto;
+import net.anjali.employeeservice.dto.OrganizationDto;
 import net.anjali.employeeservice.entity.Employee;
 import net.anjali.employeeservice.mapper.EmployeeMapper;
 import net.anjali.employeeservice.repository.EmployeeRepository;
@@ -24,6 +25,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class EmployeeServiceImpl implements EmployeeService{
     @Autowired
     private EmployeeRepository employeeRepository;
+    @Autowired
+    private WebClient webClient;
 
 //    @Autowired
 //    private RestTemplate restTemplate;
@@ -56,11 +59,16 @@ public class EmployeeServiceImpl implements EmployeeService{
 //                .bodyToMono(DepartmentDto.class)
 //                .block();
         DepartmentDto departmentDto = apiClient.getDepartmentByCode(employee.getDepartmentCode());
+        OrganizationDto organizationDto = webClient.get()
+                .uri("http://localhost:8083/api/organizations/"+employee.getOrganizationCode())
+                .retrieve()
+                .bodyToMono(OrganizationDto.class).block();
         EmployeeDto employeeDto = EmployeeMapper.INSTANCE.employeeToEmployeeDto(employee);
 
         APIResponseDto apiResponseDto = new APIResponseDto();
         apiResponseDto.setEmployeeDto(employeeDto);
         apiResponseDto.setDepartmentDto(departmentDto);
+        apiResponseDto.setOrganizationDto(organizationDto);
 
         return apiResponseDto;
     }
